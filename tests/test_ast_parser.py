@@ -2,10 +2,9 @@
 
 from pathlib import Path
 
-import pytest
-
 from testal.analyzer.ast_parser import discover_python_files, extract_functions
-from testal.analyzer.models import FunctionContext
+
+# from testal.analyzer.models import FunctionContext
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 SAMPLE_MODULE = FIXTURES_DIR / "sample_module.py"

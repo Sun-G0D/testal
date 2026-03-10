@@ -1,0 +1,10 @@
+# Testal configuration
+model: gpt-4o-mini
+output_dir: tests/
+test_style: pytest
+commit_format: conventional
+max_retries: 3
+exclude_patterns:
+  - __pycache__
+  - .venv
+  - migrations

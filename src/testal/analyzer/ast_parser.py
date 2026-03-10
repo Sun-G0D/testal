@@ -6,6 +6,8 @@ from pathlib import Path
 
 from testal.analyzer.models import FunctionContext
 
+_FuncNode = ast.FunctionDef | ast.AsyncFunctionDef
+
 
 def extract_functions(filepath: Path) -> list[FunctionContext]:
     """Parse a Python file and extract all function/method contexts."""
@@ -16,22 +18,20 @@ def extract_functions(filepath: Path) -> list[FunctionContext]:
     for node in ast.walk(tree):
         if isinstance(node, ast.ClassDef):
             for item in node.body:
-                if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                if isinstance(item, _FuncNode):
                     ctx = _node_to_context(item, filepath, source, class_name=node.name)
                     if ctx:
                         functions.append(ctx)
-        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            # Skip methods (already captured above)
-            if not _is_inside_class(tree, node):
-                ctx = _node_to_context(node, filepath, source)
-                if ctx:
-                    functions.append(ctx)
+        elif isinstance(node, _FuncNode) and not _is_inside_class(tree, node):
+            ctx = _node_to_context(node, filepath, source)
+            if ctx:
+                functions.append(ctx)
 
     return functions
 
 
 def _node_to_context(
-    node: ast.FunctionDef | ast.AsyncFunctionDef,
+    node: _FuncNode,
     filepath: Path,
     source: str,
     class_name: str | None = None,
@@ -60,16 +60,12 @@ def _node_to_context(
     )
 
 
-def _extract_args(node: ast.FunctionDef | ast.AsyncFunctionDef) -> list[str]:
+def _extract_args(node: _FuncNode) -> list[str]:
     """Extract argument names, excluding 'self' and 'cls'."""
-    return [
-        arg.arg
-        for arg in node.args.args
-        if arg.arg not in ("self", "cls")
-    ]
+    return [arg.arg for arg in node.args.args if arg.arg not in ("self", "cls")]
 
 
-def _extract_return_annotation(node: ast.FunctionDef | ast.AsyncFunctionDef) -> str | None:
+def _extract_return_annotation(node: _FuncNode) -> str | None:
     """Extract return type annotation as string, if present."""
     if node.returns:
         return ast.unparse(node.returns)
@@ -81,8 +77,9 @@ def _decorator_name(node: ast.expr) -> str:
     return ast.unparse(node)
 
 
-def _is_empty_body(node: ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
-    """Check if function body is empty (pass, ellipsis, docstring-only, or docstring+pass/ellipsis)."""
+def _is_empty_body(node: _FuncNode) -> bool:
+    """Check if function body is empty (pass, ellipsis, docstring-only,
+    or docstring+pass/ellipsis)."""
     stmts = node.body
 
     # Filter out the docstring if present
@@ -102,9 +99,14 @@ def _is_empty_body(node: ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
         stmt = non_docstring[0]
         if isinstance(stmt, ast.Pass):
             return True
-        if isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Constant) and stmt.value.value is ...:
+        if (
+            isinstance(stmt, ast.Expr)
+            and isinstance(stmt.value, ast.Constant)
+            and stmt.value.value is ...
+        ):
             return True
     return False
+
 
 def _is_inside_class(tree: ast.Module, target: ast.AST) -> bool:
     """Check if a node is directly inside a class body (i.e., is a method)."""

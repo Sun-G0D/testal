@@ -41,7 +41,9 @@ def generate(
 
 @main.command()
 @click.option("--model", default="gpt-4o-mini", help="LLM model to use.")
-@click.option("--apply", "apply_commit", is_flag=True, help="Directly run git commit with the message.")
+@click.option(
+    "--apply", "apply_commit", is_flag=True, help="Directly run git commit with the message."
+)
 @click.option("--config", type=click.Path(), default=None, help="Path to .testal.yml config file.")
 def commit(model: str, apply_commit: bool, config: str | None) -> None:
     """Generate a Conventional Commit message from staged changes."""

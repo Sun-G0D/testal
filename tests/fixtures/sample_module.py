@@ -9,6 +9,7 @@ def add(a: int, b: int) -> int:
 def fetch_data(url: str, timeout: float = 30.0) -> dict:
     """Fetch data from a URL."""
     import requests
+
     response = requests.get(url, timeout=timeout)
     return response.json()
 
@@ -43,5 +44,4 @@ class AbstractBase:
         """This should be skipped — empty body."""
         pass
 
-    def also_empty(self):
-        ...
+    def also_empty(self): ...
