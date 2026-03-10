@@ -1,6 +1,7 @@
 """Tests for the CLI entry points."""
 
 from click.testing import CliRunner
+
 from testal.cli import main
 
 
